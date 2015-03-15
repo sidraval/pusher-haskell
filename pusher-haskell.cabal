@@ -4,22 +4,28 @@
 name:                pusher-haskell
 version:             0.1.0.0
 synopsis:            A Pusher.com client written in Haskell
--- description:         
+-- description:
 homepage:            http://www.github.com/sidraval/pusher-haskell
 license:             MIT
 license-file:        LICENSE
 author:              Sid Raval
 maintainer:          sid@thoughtbot.com
--- copyright:           
+-- copyright:
 category:            Web
 build-type:          Simple
--- extra-source-files:  
+-- extra-source-files:
 cabal-version:       >=1.10
 
 library
-  -- other-modules:       
-  -- other-extensions:    
+  -- other-modules:
+  -- other-extensions:
   exposed-modules: Pusher
-  build-depends:       base >=4.7 && <4.8
+  build-depends:
+    base >=4.7 && <4.8,
+    HTTP >= 4000.2.19,
+    SHA  >= 1.6.4.1,
+    MissingH >= 1.3.0.1,
+    bytestring >= 0.10.4.0,
+    time >= 1.4.2
   hs-source-dirs:      src
   default-language:    Haskell2010
