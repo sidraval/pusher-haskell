@@ -30,18 +30,27 @@ triggerEvent p c e = do
   response <- simpleHTTP $ postRequestWithBody url contentType (requestBody c e)
   getResponseBody response
 
+-- Generate full URL for posting to Pusher
 generateUrl :: Pusher -> Channel -> Event -> IO String
 generateUrl p c e = undefined
 
 requestBody :: Channel -> Event -> String
-requestBody = undefined
+requestBody c e = "{\"name\": \""
+                  ++ (eventName e)
+                  ++ "\", \"channel\": \""
+                  ++ c
+                  ++ "\", \"data\":"
+                  ++ (eventData e)
+                  ++ "}"
 
+-- Full string ready to be signed by the app secret
 unsignedAuthString :: Pusher -> IO String -> String -> IO String
 unsignedAuthString (Pusher appId appKey _) t b =
   idKeyAndTimestamp appId appKey
   <$> t
   >>= withVersionAndBody b
 
+-- Helper for unsignedAuthString
 idKeyAndTimestamp :: String -> String -> String -> String
 idKeyAndTimestamp i k t = "POST\n/apps/"
                           ++ i
@@ -49,7 +58,7 @@ idKeyAndTimestamp i k t = "POST\n/apps/"
                           ++ k
                           ++ "&auth_timestamp="
                           ++ t
-
+-- Helper for unsignedAuthString
 withVersionAndBody :: String -> String -> IO String
 withVersionAndBody md5body url =
   return $ url ++ "&auth_version=1.0&body_md5=" ++ md5body
