@@ -31,10 +31,28 @@ triggerEvent p c e = do
   getResponseBody response
 
 generateUrl :: Pusher -> Channel -> Event -> IO String
-generateUrl = undefined
+generateUrl p c e = undefined
 
 requestBody :: Channel -> Event -> String
 requestBody = undefined
+
+unsignedAuthString :: Pusher -> IO String -> String -> IO String
+unsignedAuthString (Pusher appId appKey _) t b =
+  idKeyAndTimestamp appId appKey
+  <$> t
+  >>= withVersionAndBody b
+
+idKeyAndTimestamp :: String -> String -> String -> String
+idKeyAndTimestamp i k t = "POST\n/apps/"
+                          ++ i
+                          ++ "events\nauth_key="
+                          ++ k
+                          ++ "&auth_timestamp="
+                          ++ t
+
+withVersionAndBody :: String -> String -> IO String
+withVersionAndBody md5body url =
+  return $ url ++ "&auth_version=1.0&body_md5=" ++ md5body
 
 contentType :: String
 contentType = "application/json"
