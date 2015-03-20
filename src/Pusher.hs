@@ -24,7 +24,7 @@ authTimestamp :: Timestamp
 authTimestamp = show <$> round <$> getPOSIXTime
 
 baseUrl :: Pusher -> String
-baseUrl (Pusher appId _ _) = "http://api.pusherapp.com.com/apps/" ++ appId
+baseUrl (Pusher appId _ _) = "http://api.pusherapp.com/apps/" ++ appId
 
 triggerEvent :: Pusher -> Channel -> Event -> IO String
 triggerEvent p c e = do
@@ -35,7 +35,7 @@ triggerEvent p c e = do
 -- Generate full URL for posting to Pusher
 generateUrl :: Pusher -> Channel -> Event -> IO String
 generateUrl p c e = do
-  let md5body = md5s $ Str $ requestBody c e
+  let md5body = md5s . Str $ requestBody c e
   let timestamp = authTimestamp
   withoutSignature <- urlWithoutSignature p md5body timestamp
   (++) (withoutSignature  ++ "&auth_signature=")
@@ -45,7 +45,7 @@ urlWithoutSignature :: Pusher -> Md5Body -> Timestamp -> IO String
 urlWithoutSignature p@(Pusher _ k _) b t = ((++) (baseUrl p
                                                   ++ "/events?body_md5="
                                                   ++ b
-                                                  ++ "&authversion=1.0&auth_key="
+                                                  ++ "&auth_version=1.0&auth_key="
                                                   ++ k
                                                   ++ "&auth_timestamp="))
                                             <$> t
@@ -77,7 +77,7 @@ unsignedAuthString (Pusher appId appKey _) t b =
 idKeyAndTimestamp :: String -> String -> String -> String
 idKeyAndTimestamp i k t = "POST\n/apps/"
                           ++ i
-                          ++ "events\nauth_key="
+                          ++ "/events\nauth_key="
                           ++ k
                           ++ "&auth_timestamp="
                           ++ t
