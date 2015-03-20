@@ -4,7 +4,6 @@ A [Pusher](http://www.pusher.com) server client written in Haskell.
 Currently, the package only allows triggering events on a single channel. Next
 up:
 
-* Triggering a single event across multiple channels
 * Fetching a list of channels with active subscriptions
 * Fetching information for a particular channel
 * Fetching a list of users present for a particular channel
@@ -23,6 +22,16 @@ should see an alert popup on screen.
 
 > triggerEvent pusher channel event
 "{}"
+```
+
+You can also trigger events across multiple channels:
+```haskell
+> ...
+> let channels = ["first_channel", "second_channel"]
+> ...
+
+> triggerEvent pusher channels event
+["{}", "{}"]
 ```
 
 ## Issues

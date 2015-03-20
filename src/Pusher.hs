@@ -1,4 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Pusher where
 
@@ -26,11 +28,17 @@ authTimestamp = show <$> round <$> getPOSIXTime
 baseUrl :: Pusher -> String
 baseUrl (Pusher appId _ _) = "http://api.pusherapp.com/apps/" ++ appId
 
-triggerEvent :: Pusher -> Channel -> Event -> IO String
-triggerEvent p c e = do
-  url <- generateUrl p c e
-  response <- simpleHTTP $ postRequestWithBody url contentType (requestBody c e)
-  getResponseBody response
+class CanTriggerEvent a b where
+  triggerEvent :: Pusher -> a -> Event -> b
+
+instance CanTriggerEvent Channel (IO String) where
+  triggerEvent p c e = do
+    url <- generateUrl p c e
+    response <- simpleHTTP $ postRequestWithBody url contentType (requestBody c e)
+    getResponseBody response
+
+instance CanTriggerEvent [Channel] [IO String] where
+  triggerEvent p cs e = map (flip (generateUrl p) e) cs
 
 -- Generate full URL for posting to Pusher
 generateUrl :: Pusher -> Channel -> Event -> IO String
