@@ -10,15 +10,17 @@ import qualified Data.ByteString.Lazy.Char8 as B
 import Data.Hash.MD5
 
 type Channel = String
+type Timestamp = IO String
+type Md5Body = String
 
 data Pusher = Pusher { pusherAppId :: String
                      , pusherAppKey :: String
                      , pusherAppSecret :: String }
 
 data Event = Event { eventName :: String
-                               , eventData :: String }
+                   , eventData :: String }
 
-authTimestamp :: IO String
+authTimestamp :: Timestamp
 authTimestamp = show <$> round <$> getPOSIXTime
 
 baseUrl :: Pusher -> String
@@ -32,8 +34,23 @@ triggerEvent p c e = do
 
 -- Generate full URL for posting to Pusher
 generateUrl :: Pusher -> Channel -> Event -> IO String
-generateUrl p c e = undefined
+generateUrl p c e = do
+  let md5body = md5s $ Str $ requestBody c e
+  let timestamp = authTimestamp
+  withoutSignature <- urlWithoutSignature p md5body timestamp
+  (++) (withoutSignature  ++ "&auth_signature=")
+    <$> signedAuthString p timestamp md5body
 
+urlWithoutSignature :: Pusher -> Md5Body -> Timestamp -> IO String
+urlWithoutSignature p@(Pusher _ k _) b t = ((++) (baseUrl p
+                                                  ++ "/events?body_md5="
+                                                  ++ b
+                                                  ++ "&authversion=1.0&auth_key="
+                                                  ++ k
+                                                  ++ "&auth_timestamp="))
+                                            <$> t
+
+-- Encoding of data for POST to trigger an event
 requestBody :: Channel -> Event -> String
 requestBody c e = "{\"name\": \""
                   ++ (eventName e)
@@ -43,8 +60,14 @@ requestBody c e = "{\"name\": \""
                   ++ (eventData e)
                   ++ "}"
 
+-- Signed authentication string
+signedAuthString :: Pusher -> Timestamp -> Md5Body -> IO String
+signedAuthString p@(Pusher _ _ appSecret) t b = do
+  signatureString <- unsignedAuthString p t b >>= return . B.pack
+  return . showDigest $ hmacSha256 (B.pack appSecret) signatureString
+
 -- Full string ready to be signed by the app secret
-unsignedAuthString :: Pusher -> IO String -> String -> IO String
+unsignedAuthString :: Pusher -> Timestamp -> Md5Body -> IO String
 unsignedAuthString (Pusher appId appKey _) t b =
   idKeyAndTimestamp appId appKey
   <$> t
@@ -58,8 +81,9 @@ idKeyAndTimestamp i k t = "POST\n/apps/"
                           ++ k
                           ++ "&auth_timestamp="
                           ++ t
+
 -- Helper for unsignedAuthString
-withVersionAndBody :: String -> String -> IO String
+withVersionAndBody :: Md5Body -> String -> IO String
 withVersionAndBody md5body url =
   return $ url ++ "&auth_version=1.0&body_md5=" ++ md5body
 
