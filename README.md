@@ -1,15 +1,29 @@
 #![Haskell](https://raw.githubusercontent.com/sidraval/pusher-haskell/master/assets/haskell.png)![Pusher](https://raw.githubusercontent.com/sidraval/pusher-haskell/master/assets/pusher.png)
 A [Pusher](http://www.pusher.com) server client written in Haskell.
 
+Currently, the package only allows triggering events on a single channel. Next
+up:
+
+* Triggering a single event across multiple channels
+* Fetching a list of channels with active subscriptions
+* Fetching information for a particular channel
+* Fetching a list of users present for a particular channel
+
 ## Usage
-An example:
+If you go to https://app.pusher.com/apps/YOUR_APP_ID/api_access and run the
+following code after filling in your `app-id`, `app-key`, and `app-secret`, you
+should see an alert popup on screen.
 
 ```haskell
-import Pusher
+> import Pusher
 
-let pusher = Pusher "app-id", "app-key", "app-secret"
-let channel = "my-pusher-channel"
-let event = Event "event-name" "event-data"
+> let pusher = Pusher "app-id", "app-key", "app-secret"
+> let channel = "test_channel"
+> let event = Event "my_event" "\"{\\\"message\\\":\\\"hello world\\\"}\""
 
-triggerEvent pusher channel event
+> triggerEvent pusher channel event
+"{}"
 ```
+
+## Issues
+* The user should not have to provided encoded JSON as in the above example
