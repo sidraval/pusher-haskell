@@ -16,7 +16,7 @@ should see an alert popup on screen.
 ```haskell
 > import Pusher
 
-> let pusher = Pusher "app-id", "app-key", "app-secret"
+> let pusher = Pusher "app-id" "app-key" "app-secret"
 > let channel = "test_channel"
 > let event = Event "my_event" "\"{\\\"message\\\":\\\"hello world\\\"}\""
 
