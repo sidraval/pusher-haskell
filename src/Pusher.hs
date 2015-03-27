@@ -6,3 +6,4 @@ module Pusher where
 
 import Pusher.Base
 import Pusher.Event
+import Pusher.Channel
