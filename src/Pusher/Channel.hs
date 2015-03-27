@@ -1,6 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Pusher.Channel where
 
@@ -46,7 +45,7 @@ unsignedAuthString :: Pusher -> Channel -> Timestamp -> IO String
 unsignedAuthString (Pusher appId appKey _) c t =
   idKeyAndTimestamp appId appKey c
   <$> t
-  >>= withVersion
+  >>= (\u -> return $ u ++ "&auth_version=1.0")
 
 -- Helper for unsignedAuthString
 idKeyAndTimestamp :: String -> String -> Channel -> String -> String
@@ -58,8 +57,3 @@ idKeyAndTimestamp i k c t = "GET\n/apps/"
                             ++ k
                             ++ "&auth_timestamp="
                             ++ t
-
--- Helper for unsignedAuthString
-withVersion :: String -> IO String
-withVersion url =
-  return $ url ++ "&auth_version=1.0"

@@ -62,7 +62,7 @@ unsignedAuthString :: Pusher -> Timestamp -> Md5Body -> IO String
 unsignedAuthString (Pusher appId appKey _) t b =
   idKeyAndTimestamp appId appKey
   <$> t
-  >>= withVersionAndBody b
+  >>= (\u -> return $ u ++ "&auth_version=1.0&body_md5=" ++ b)
 
 -- Helper for unsignedAuthString
 idKeyAndTimestamp :: String -> String -> String -> String
@@ -72,8 +72,3 @@ idKeyAndTimestamp i k t = "POST\n/apps/"
                           ++ k
                           ++ "&auth_timestamp="
                           ++ t
-
--- Helper for unsignedAuthString
-withVersionAndBody :: Md5Body -> String -> IO String
-withVersionAndBody md5body url =
-  return $ url ++ "&auth_version=1.0&body_md5=" ++ md5body
