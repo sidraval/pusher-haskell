@@ -1,11 +1,14 @@
 #![Haskell](https://raw.githubusercontent.com/sidraval/pusher-haskell/master/assets/haskell.png)![Pusher](https://raw.githubusercontent.com/sidraval/pusher-haskell/master/assets/pusher.png)
 A [Pusher](http://www.pusher.com) server client written in Haskell.
 
-Currently, the package only allows triggering events on a single channel. Next
-up:
+Currently, the package allows:
+
+* Triggering events on single or multiple channels
+* Fetching basic information about a given channel
+
+Up next:
 
 * Fetching a list of channels with active subscriptions
-* Fetching information for a particular channel
 * Fetching a list of users present for a particular channel
 
 ## Usage
@@ -22,6 +25,9 @@ should see an alert popup on screen.
 
 > triggerEvent pusher channel event
 "{}"
+
+> getChannelInfo pusher channel
+"{\"occupied\":true}"
 ```
 
 You can also trigger events across multiple channels:
@@ -34,5 +40,6 @@ You can also trigger events across multiple channels:
 ["{}", "{}"]
 ```
 
-## Issues
+## Issues & Todo
 * The user should not have to provided encoded JSON as in the above example
+* Use Aeson to decode responses into data structures on our end
