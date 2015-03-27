@@ -19,7 +19,7 @@ cabal-version:       >=1.10
 library
   -- other-modules:
   -- other-extensions:
-  exposed-modules: Pusher
+  exposed-modules: Pusher, Pusher.Base, Pusher.Event
   build-depends:
     base >=4.7 && <4.8,
     HTTP >= 4000.2.19,
