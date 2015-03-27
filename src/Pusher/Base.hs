@@ -11,6 +11,7 @@ data Event = Event { eventName :: String
                    , eventData :: String }
 
 type Channel = String
+type Channels = [Channel]
 type Timestamp = IO String
 type Md5Body = String
 

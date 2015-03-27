@@ -1,6 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Pusher.Event where
 
@@ -11,22 +10,20 @@ import qualified Data.ByteString.Lazy.Char8 as B
 import Data.Hash.MD5
 import Pusher.Base
 
-class CanTriggerEvent a b where
-  triggerEvent :: Pusher -> a -> Event -> b
+class RequestBodyable a where
+  requestBody :: a -> Event -> String
 
-instance CanTriggerEvent Channel (IO String) where
-  triggerEvent p c e = do
-    url <- generateUrl p c e
-    response <- simpleHTTP $ postRequestWithBody url contentType (requestBody c e)
-    getResponseBody response
-
-instance CanTriggerEvent [Channel] [IO String] where
-  triggerEvent p cs e = map (flip (generateUrl p) e) cs
+triggerEvent :: (RequestBodyable a) => Pusher -> a -> Event -> IO String
+triggerEvent p c e = do
+  let b = requestBody c e
+  url <- generateUrl p b e
+  response <- simpleHTTP $ postRequestWithBody url contentType b
+  getResponseBody response
 
 -- Generate full URL for posting to Pusher
-generateUrl :: Pusher -> Channel -> Event -> IO String
-generateUrl p c e = do
-  let md5body = md5s . Str $ requestBody c e
+generateUrl :: Pusher -> String -> Event -> IO String
+generateUrl p b e = do
+  let md5body = md5s . Str $ b
   let timestamp = authTimestamp
   withoutSignature <- urlWithoutSignature p md5body timestamp
   (++) (withoutSignature  ++ "&auth_signature=")
@@ -42,14 +39,23 @@ urlWithoutSignature p@(Pusher _ k _) b t = ((++) (baseUrl p
                                             <$> t
 
 -- Encoding of data for POST to trigger an event
-requestBody :: Channel -> Event -> String
-requestBody c e = "{\"name\": \""
-                  ++ (eventName e)
-                  ++ "\", \"channel\": \""
-                  ++ c
-                  ++ "\", \"data\":"
-                  ++ (eventData e)
-                  ++ "}"
+instance RequestBodyable Channel where
+  requestBody c e = "{\"name\": \""
+                    ++ (eventName e)
+                    ++ "\", \"channel\": \""
+                    ++ c
+                    ++ "\", \"data\":"
+                    ++ (eventData e)
+                    ++ "}"
+
+instance RequestBodyable Channels where
+  requestBody cs e = "{\"name\": \""
+                     ++ (eventName e)
+                     ++ "\", \"channels\": "
+                     ++ show cs
+                     ++ ", \"data\":"
+                     ++ (eventData e)
+                     ++ "}"
 
 -- Signed authentication string
 signedAuthString :: Pusher -> Timestamp -> Md5Body -> IO String

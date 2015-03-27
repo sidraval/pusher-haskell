@@ -37,7 +37,7 @@ You can also trigger events across multiple channels:
 > ...
 
 > triggerEvent pusher channels event
-["{}", "{}"]
+"{}"
 ```
 
 ## Issues & Todo
