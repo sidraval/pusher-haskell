@@ -7,19 +7,9 @@ module Pusher.Channel where
 import Network.HTTP
 import Control.Applicative
 import Data.Digest.Pure.SHA
-import Data.Time.Clock.POSIX
 import qualified Data.ByteString.Lazy.Char8 as B
 import Data.Hash.MD5
 import Pusher.Base
-
-type Channel = String
-type Timestamp = IO String
-
-authTimestamp :: Timestamp
-authTimestamp = show <$> round <$> getPOSIXTime
-
-baseUrl :: Pusher -> String
-baseUrl (Pusher appId _ _) = "http://api.pusherapp.com/apps/" ++ appId
 
 getChannelInfo :: Pusher -> Channel -> IO String
 getChannelInfo p c = do
@@ -73,6 +63,3 @@ idKeyAndTimestamp i k c t = "GET\n/apps/"
 withVersion :: String -> IO String
 withVersion url =
   return $ url ++ "&auth_version=1.0"
-
-contentType :: String
-contentType = "application/json"

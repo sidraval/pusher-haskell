@@ -7,20 +7,9 @@ module Pusher.Event where
 import Network.HTTP
 import Control.Applicative
 import Data.Digest.Pure.SHA
-import Data.Time.Clock.POSIX
 import qualified Data.ByteString.Lazy.Char8 as B
 import Data.Hash.MD5
 import Pusher.Base
-
-type Channel = String
-type Timestamp = IO String
-type Md5Body = String
-
-authTimestamp :: Timestamp
-authTimestamp = show <$> round <$> getPOSIXTime
-
-baseUrl :: Pusher -> String
-baseUrl (Pusher appId _ _) = "http://api.pusherapp.com/apps/" ++ appId
 
 class CanTriggerEvent a b where
   triggerEvent :: Pusher -> a -> Event -> b
@@ -88,6 +77,3 @@ idKeyAndTimestamp i k t = "POST\n/apps/"
 withVersionAndBody :: Md5Body -> String -> IO String
 withVersionAndBody md5body url =
   return $ url ++ "&auth_version=1.0&body_md5=" ++ md5body
-
-contentType :: String
-contentType = "application/json"
