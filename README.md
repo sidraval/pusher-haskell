@@ -21,7 +21,7 @@ should see an alert popup on screen.
 
 > let pusher = Pusher "app-id" "app-key" "app-secret"
 > let channel = "test_channel"
-> let event = Event "my_event" "\"{\\\"message\\\":\\\"hello world\\\"}\""
+> let event = Event "my_event" "{\"message\":\"hello world\"}"
 
 > triggerEvent pusher channel event
 "{}"
@@ -41,5 +41,4 @@ You can also trigger events across multiple channels:
 ```
 
 ## Issues & Todo
-* The user should not have to provided encoded JSON as in the above example
 * Use Aeson to decode responses into data structures on our end

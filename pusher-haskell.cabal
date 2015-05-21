@@ -22,6 +22,7 @@ library
   exposed-modules: Pusher, Pusher.Base, Pusher.Event
   build-depends:
     base >=4.7 && <4.8,
+    aeson >= 0.8.0.2,
     HTTP >= 4000.2.19,
     SHA  >= 1.6.4.1,
     MissingH >= 1.3.0.1,

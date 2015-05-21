@@ -5,6 +5,7 @@ module Pusher.Event where
 
 import Network.HTTP
 import Control.Applicative
+import Data.Aeson.Encode (encode)
 import Data.Digest.Pure.SHA
 import qualified Data.ByteString.Lazy.Char8 as B
 import Data.Hash.MD5
@@ -45,7 +46,7 @@ instance RequestBodyable Channel where
                     ++ "\", \"channel\": \""
                     ++ c
                     ++ "\", \"data\":"
-                    ++ (eventData e)
+                    ++ (B.unpack . encode . eventData $ e)
                     ++ "}"
 
 instance RequestBodyable Channels where
@@ -54,7 +55,7 @@ instance RequestBodyable Channels where
                      ++ "\", \"channels\": "
                      ++ show cs
                      ++ ", \"data\":"
-                     ++ (eventData e)
+                     ++ (B.unpack . encode . eventData $ e)
                      ++ "}"
 
 -- Signed authentication string
