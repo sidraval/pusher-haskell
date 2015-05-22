@@ -5,16 +5,18 @@ module Pusher.Channel where
 
 import Network.HTTP
 import Control.Applicative
+import Data.Aeson
 import Data.Digest.Pure.SHA
 import qualified Data.ByteString.Lazy.Char8 as B
 import Data.Hash.MD5
 import Pusher.Base
 
-getChannelInfo :: Pusher -> Channel -> IO String
+getChannelInfo :: Pusher -> Channel -> IO (Maybe ChannelInfo)
 getChannelInfo p c = do
   url <- generateUrl p c
   response <- simpleHTTP $ getRequest url
-  getResponseBody response
+  body <- getResponseBody response
+  return . decode $ B.pack body
 
 -- Generate full URL for posting to Pusher
 generateUrl :: Pusher -> Channel -> IO String

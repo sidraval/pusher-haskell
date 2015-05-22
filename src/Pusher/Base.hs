@@ -1,6 +1,10 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Pusher.Base where
 
 import Control.Applicative
+import Control.Monad
+import Data.Aeson
 import Data.Time.Clock.POSIX
 
 data Pusher = Pusher { pusherAppId :: String
@@ -9,6 +13,18 @@ data Pusher = Pusher { pusherAppId :: String
 
 data Event = Event { eventName :: String
                    , eventData :: String }
+
+data ChannelInfo = ChannelInfo { occupied :: Bool
+                               , userCount :: Maybe Int
+                               , subscriptionCount :: Maybe Int
+                               } deriving Show
+
+instance FromJSON ChannelInfo where
+  parseJSON (Object v) = ChannelInfo <$>
+                         v .: "occupied" <*>
+                         v .:? "user_count" <*>
+                         v .:? "subscription_count"
+  parseJSON _ = mzero
 
 type Channel = String
 type Channels = [Channel]
