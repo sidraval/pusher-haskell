@@ -11,12 +11,14 @@ import qualified Data.ByteString.Lazy.Char8 as B
 import Data.Hash.MD5
 import Pusher.Base
 
-getChannelInfo :: Pusher -> Channel -> IO (Maybe ChannelInfo)
+getChannelInfo :: Pusher -> Channel -> IO (Either String ChannelInfo)
 getChannelInfo p c = do
   url <- generateUrl p c
   response <- simpleHTTP $ getRequest url
   body <- getResponseBody response
-  return . decode $ B.pack body
+  case (decode . B.pack $ body) of
+    (Just c) -> return $ Right c
+    Nothing -> return $ Left body
 
 -- Generate full URL for posting to Pusher
 generateUrl :: Pusher -> Channel -> IO String
