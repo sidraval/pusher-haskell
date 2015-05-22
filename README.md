@@ -39,6 +39,3 @@ You can also trigger events across multiple channels:
 > triggerEvent pusher channels event
 "{}"
 ```
-
-## Issues & Todo
-* Use Aeson to decode responses into data structures on our end
