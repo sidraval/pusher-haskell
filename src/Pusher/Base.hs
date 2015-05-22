@@ -19,6 +19,12 @@ data ChannelInfo = ChannelInfo { occupied :: Bool
                                , subscriptionCount :: Maybe Int
                                } deriving Show
 
+data Info = UserCount | SubscriptionCount
+
+instance Show Info where
+  show UserCount = "user_count"
+  show SubscriptionCount = "subscription_count"
+
 instance FromJSON ChannelInfo where
   parseJSON (Object v) = ChannelInfo <$>
                          v .: "occupied" <*>
