@@ -1,7 +1,22 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Pusher.Channel
+-- Copyright   :  See LICENSE file
+-- License     :  BSD
+--
+-- Maintainer  :  Sid Raval <sidsraval@gmail.com>
+-- Stability   :  experimental
+-- Portability :  non-portable (not tested)
+--
+-- The 'Pusher.Channel' module provides an simple interface for interacting
+-- with Pusher.com's @channel@ endpoints. In particular, one can fetch info
+-- about every occupied channel for a given App ID, or more detailed information
+-- about a channel specified by name.
+-----------------------------------------------------------------------------
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module Pusher.Channel where
+module Pusher.Channel (getChannelInfo) where
 
 import Network.HTTP
 import Control.Applicative
@@ -13,6 +28,11 @@ import Data.Hash.MD5
 import Data.List
 import Pusher.Base
 
+-- | @getChannelInfo pusher channel info@ requests information about a
+-- particular channel for the given 'Pusher' instance. The result is either an
+-- error message returned by the Pusher server, or a 'ChannelInfo' data
+-- structure.
+
 getChannelInfo :: Pusher -> Channel -> [Info] -> IO (Either String ChannelInfo)
 getChannelInfo p c is = do
   url <- generateUrl p c is
@@ -22,7 +42,6 @@ getChannelInfo p c is = do
     (Just c) -> return $ Right c
     Nothing -> return $ Left body
 
--- Generate full URL for posting to Pusher
 generateUrl :: Pusher -> Channel -> [Info] -> IO String
 generateUrl p c is = do
   let timestamp = authTimestamp
@@ -41,23 +60,20 @@ urlWithoutSignature p@(Pusher _ k _) c is t = ((++) (baseUrl p
                                                   ++ "&auth_timestamp="))
                                             <$> t
 queryParamFromInfo :: [Info] -> String
-queryParamFromINfo [] = mzero
+queryParamFromInfo [] = mzero
 queryParamFromInfo xs = "&info=" ++ (intercalate "," $ map show xs)
 
--- Signed authentication string
 signedAuthString :: Pusher -> Channel -> [Info] -> Timestamp -> IO String
 signedAuthString p@(Pusher _ _ appSecret) c is t = do
   signatureString <- unsignedAuthString p c is t >>= return . B.pack
   return . showDigest $ hmacSha256 (B.pack appSecret) signatureString
 
--- Full string ready to be signed by the app secret
 unsignedAuthString :: Pusher -> Channel -> [Info] -> Timestamp -> IO String
 unsignedAuthString (Pusher appId appKey _) c is t =
   idKeyAndTimestamp appId appKey c
   <$> t
   >>= (\u -> return $ u ++ "&auth_version=1.0" ++ queryParamFromInfo is)
 
--- Helper for unsignedAuthString
 idKeyAndTimestamp :: String -> String -> Channel -> String -> String
 idKeyAndTimestamp i k c t = "GET\n/apps/"
                             ++ i

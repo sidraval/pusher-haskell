@@ -26,8 +26,8 @@ should see an alert popup on screen.
 > triggerEvent pusher channel event
 "{}"
 
-> getChannelInfo pusher channel
-"{\"occupied\":true}"
+> getChannelInfo pusher channel []
+Right (ChannelInfo {occupied = True, userCount = Nothing, subscriptionCount = Nothing})
 ```
 
 You can also trigger events across multiple channels:
