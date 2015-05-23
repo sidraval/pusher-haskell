@@ -39,3 +39,11 @@ You can also trigger events across multiple channels:
 > triggerEvent pusher channels event
 "{}"
 ```
+
+License
+-------
+
+pusher-haskell is Copyright (c) 2015 Sid Raval. It is free software, and may be
+redistributed under the terms specified in the [LICENSE] file.
+
+[LICENSE]: /LICENSE
