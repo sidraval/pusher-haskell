@@ -1,7 +1,21 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Pusher.Event
+-- Copyright   :  See LICENSE file
+-- License     :  BSD
+--
+-- Maintainer  :  Sid Raval <sidsraval@gmail.com>
+-- Stability   :  experimental
+-- Portability :  non-portable (not tested)
+--
+-- The 'Pusher.Event' module provides an simple interface for interacting
+-- with Pusher.com's @event@ endpoints. This is used for trigger an event on one
+-- or more channels with arbitrary data.
+-----------------------------------------------------------------------------
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module Pusher.Event where
+module Pusher.Event (triggerEvent) where
 
 import Network.HTTP
 import Control.Applicative
@@ -14,6 +28,9 @@ import Pusher.Base
 class RequestBodyable a where
   requestBody :: a -> Event -> String
 
+-- | @triggerEvent pusher channel(s) event@ sends an event to one or more
+-- channels for the given 'Pusher' instance. The result is the response body
+-- from the Pusher server.
 triggerEvent :: (RequestBodyable a) => Pusher -> a -> Event -> IO String
 triggerEvent p c e = do
   let b = requestBody c e
@@ -21,7 +38,6 @@ triggerEvent p c e = do
   response <- simpleHTTP $ postRequestWithBody url contentType b
   getResponseBody response
 
--- Generate full URL for posting to Pusher
 generateUrl :: Pusher -> String -> Event -> IO String
 generateUrl p b e = do
   let md5body = md5s . Str $ b
@@ -39,7 +55,6 @@ urlWithoutSignature p@(Pusher _ k _) b t = ((++) (baseUrl p
                                                   ++ "&auth_timestamp="))
                                             <$> t
 
--- Encoding of data for POST to trigger an event
 instance RequestBodyable Channel where
   requestBody c e = "{\"name\": \""
                     ++ (eventName e)
@@ -58,13 +73,11 @@ instance RequestBodyable Channels where
                      ++ (B.unpack . encode . eventData $ e)
                      ++ "}"
 
--- Signed authentication string
 signedAuthString :: Pusher -> Timestamp -> Md5Body -> IO String
 signedAuthString p@(Pusher _ _ appSecret) t b = do
   signatureString <- unsignedAuthString p t b >>= return . B.pack
   return . showDigest $ hmacSha256 (B.pack appSecret) signatureString
 
--- Full string ready to be signed by the app secret
 unsignedAuthString :: Pusher -> Timestamp -> Md5Body -> IO String
 unsignedAuthString (Pusher appId appKey _) t b =
   idKeyAndTimestamp appId appKey

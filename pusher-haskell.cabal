@@ -19,7 +19,7 @@ cabal-version:       >=1.10
 library
   -- other-modules:
   -- other-extensions:
-  exposed-modules: Pusher, Pusher.Base, Pusher.Event
+  exposed-modules: Pusher, Pusher.Base, Pusher.Event, Pusher.Channel
   build-depends:
     base >=4.7 && <4.8,
     aeson >= 0.8.0.2,
