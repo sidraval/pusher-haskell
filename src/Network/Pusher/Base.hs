@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Pusher.Base where
+module Network.Pusher.Base where
 
 import Control.Applicative
 import Control.Monad

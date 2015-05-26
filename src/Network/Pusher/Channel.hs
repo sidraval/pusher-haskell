@@ -16,7 +16,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module Pusher.Channel (getChannelInfo) where
+module Network.Pusher.Channel (getChannelInfo) where
 
 import Network.HTTP
 import Control.Applicative
@@ -26,7 +26,7 @@ import Data.Digest.Pure.SHA
 import qualified Data.ByteString.Lazy.Char8 as B
 import Data.Hash.MD5
 import Data.List
-import Pusher.Base
+import Network.Pusher.Base
 
 -- | @getChannelInfo pusher channel info@ requests information about a
 -- particular channel for the given 'Pusher' instance. The result is either an

@@ -17,7 +17,7 @@ following code after filling in your `app-id`, `app-key`, and `app-secret`, you
 should see an alert popup on screen.
 
 ```haskell
-> import Pusher
+> import Network.Pusher
 
 > let pusher = Pusher "app-id" "app-key" "app-secret"
 > let channel = "test_channel"

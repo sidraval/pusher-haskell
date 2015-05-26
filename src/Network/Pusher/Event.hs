@@ -15,7 +15,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module Pusher.Event (triggerEvent) where
+module Network.Pusher.Event (triggerEvent) where
 
 import Network.HTTP
 import Control.Applicative
@@ -23,7 +23,7 @@ import Data.Aeson.Encode (encode)
 import Data.Digest.Pure.SHA
 import qualified Data.ByteString.Lazy.Char8 as B
 import Data.Hash.MD5
-import Pusher.Base
+import Network.Pusher.Base
 
 class RequestBodyable a where
   requestBody :: a -> Event -> String
