@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Pusher.Event
+-- Module      :  Network.Pusher.Event
 -- Copyright   :  See LICENSE file
 -- License     :  BSD
 --
@@ -8,7 +8,7 @@
 -- Stability   :  experimental
 -- Portability :  non-portable (not tested)
 --
--- The 'Pusher.Event' module provides an simple interface for interacting
+-- The 'Network.Pusher.Event' module provides an simple interface for interacting
 -- with Pusher.com's @event@ endpoints. This is used for trigger an event on one
 -- or more channels with arbitrary data.
 -----------------------------------------------------------------------------

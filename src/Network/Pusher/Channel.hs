@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Pusher.Channel
+-- Module      :  Network.Pusher.Channel
 -- Copyright   :  See LICENSE file
 -- License     :  BSD
 --
@@ -8,7 +8,7 @@
 -- Stability   :  experimental
 -- Portability :  non-portable (not tested)
 --
--- The 'Pusher.Channel' module provides an simple interface for interacting
+-- The 'Network.Pusher.Channel' module provides an simple interface for interacting
 -- with Pusher.com's @channel@ endpoints. In particular, one can fetch info
 -- about every occupied channel for a given App ID, or more detailed information
 -- about a channel specified by name.
