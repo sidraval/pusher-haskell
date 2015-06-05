@@ -60,6 +60,19 @@ mUrlWithoutSignature t = do
       ++ queryParamFromInfo is
       ++ "&auth_timestamp=")) <$> t
 
+mSignedAuthString :: Timestamp -> ReaderT Environment IO String
+mSignedAuthString t = do
+  (p@(Pusher _ _ appSecret), c, is) <- ask
+  signatureString <- mUnsignedAuthString t >>= return . B.pack
+  return . showDigest $ hmacSha256 (B.pack appSecret) signatureString
+
+mUnsignedAuthString :: Timestamp -> ReaderT Environment IO String
+mUnsignedAuthString t = do
+  (p@(Pusher appId appKey _), c, is) <- ask
+  liftIO $ idKeyAndTimestamp appId appKey c
+    <$> t
+    >>= (\u -> return $ u ++ "&auth_version=1.0" ++ queryParamFromInfo is)
+
 -- | @getChannelInfo pusher channel info@ requests information about a
 -- particular channel for the given 'Pusher' instance. The result is either an
 -- error message returned by the Pusher server, or a 'ChannelInfo' data
