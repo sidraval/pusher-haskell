@@ -21,12 +21,44 @@ module Network.Pusher.Channel (getChannelInfo) where
 import Network.HTTP
 import Control.Applicative
 import Control.Monad
+import Control.Monad.Reader
 import Data.Aeson
 import Data.Digest.Pure.SHA
 import qualified Data.ByteString.Lazy.Char8 as B
 import Data.Hash.MD5
 import Data.List
 import Network.Pusher.Base
+
+type Environment = (Pusher, Channel, [Info])
+
+mGetChannelInfo :: ReaderT Environment IO (Either String ChannelInfo)
+mGetChannelInfo = do
+  (p, c, is) <- ask
+  response <- liftIO . simpleHTTP . getRequest =<< mGenerateUrl
+  body <- liftIO $ getResponseBody response
+  case (decode . B.pack $ body) of
+    (Just c) -> return $ Right c
+    Nothing -> return $ Left body
+
+mGenerateUrl :: ReaderT Environment IO String
+mGenerateUrl = do
+  let timestamp = authTimestamp
+  (p, c, is) <- ask
+  withoutSignature <- mUrlWithoutSignature timestamp
+  (++) (withoutSignature ++ "&auth_signature=")
+    <$> (liftIO $ signedAuthString p c is timestamp)
+
+mUrlWithoutSignature :: Timestamp -> ReaderT Environment IO String
+mUrlWithoutSignature t = do
+  (p@(Pusher _ k _), c, is) <- ask
+  liftIO $ ((++) (baseUrl p
+      ++ "/channels/"
+      ++ c
+      ++ "?auth_version=1.0"
+      ++ "&auth_key="
+      ++  k
+      ++ queryParamFromInfo is
+      ++ "&auth_timestamp=")) <$> t
 
 -- | @getChannelInfo pusher channel info@ requests information about a
 -- particular channel for the given 'Pusher' instance. The result is either an
