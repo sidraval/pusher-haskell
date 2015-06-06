@@ -31,25 +31,33 @@ import Network.Pusher.Base
 
 type Environment = (Pusher, Channel, [Info])
 
-mGetChannelInfo :: ReaderT Environment IO (Either String ChannelInfo)
-mGetChannelInfo = do
+-- | @getChannelInfo pusher channel info@ requests information about a
+-- particular channel for the given 'Pusher' instance. The result is either an
+-- error message returned by the Pusher server, or a 'ChannelInfo' data
+-- structure.
+
+getChannelInfo :: Environment -> IO (Either String ChannelInfo)
+getChannelInfo = runReaderT channelInfo
+
+channelInfo :: ReaderT Environment IO (Either String ChannelInfo)
+channelInfo = do
   (p, c, is) <- ask
-  response <- liftIO . simpleHTTP . getRequest =<< mGenerateUrl
+  response <- liftIO . simpleHTTP . getRequest =<< generateUrl
   body <- liftIO $ getResponseBody response
   case (decode . B.pack $ body) of
     (Just c) -> return $ Right c
     Nothing -> return $ Left body
 
-mGenerateUrl :: ReaderT Environment IO String
-mGenerateUrl = do
+generateUrl :: ReaderT Environment IO String
+generateUrl = do
   let timestamp = authTimestamp
   (p, c, is) <- ask
-  withoutSignature <- mUrlWithoutSignature timestamp
+  withoutSignature <- urlWithoutSignature timestamp
   (++) (withoutSignature ++ "&auth_signature=")
-    <$> (liftIO $ signedAuthString p c is timestamp)
+    <$> signedAuthString timestamp
 
-mUrlWithoutSignature :: Timestamp -> ReaderT Environment IO String
-mUrlWithoutSignature t = do
+urlWithoutSignature :: Timestamp -> ReaderT Environment IO String
+urlWithoutSignature t = do
   (p@(Pusher _ k _), c, is) <- ask
   liftIO $ ((++) (baseUrl p
       ++ "/channels/"
@@ -60,64 +68,22 @@ mUrlWithoutSignature t = do
       ++ queryParamFromInfo is
       ++ "&auth_timestamp=")) <$> t
 
-mSignedAuthString :: Timestamp -> ReaderT Environment IO String
-mSignedAuthString t = do
+signedAuthString :: Timestamp -> ReaderT Environment IO String
+signedAuthString t = do
   (p@(Pusher _ _ appSecret), c, is) <- ask
-  signatureString <- mUnsignedAuthString t >>= return . B.pack
+  signatureString <- unsignedAuthString t >>= return . B.pack
   return . showDigest $ hmacSha256 (B.pack appSecret) signatureString
 
-mUnsignedAuthString :: Timestamp -> ReaderT Environment IO String
-mUnsignedAuthString t = do
+unsignedAuthString :: Timestamp -> ReaderT Environment IO String
+unsignedAuthString t = do
   (p@(Pusher appId appKey _), c, is) <- ask
   liftIO $ idKeyAndTimestamp appId appKey c
     <$> t
     >>= (\u -> return $ u ++ "&auth_version=1.0" ++ queryParamFromInfo is)
 
--- | @getChannelInfo pusher channel info@ requests information about a
--- particular channel for the given 'Pusher' instance. The result is either an
--- error message returned by the Pusher server, or a 'ChannelInfo' data
--- structure.
-
-getChannelInfo :: Pusher -> Channel -> [Info] -> IO (Either String ChannelInfo)
-getChannelInfo p c is = do
-  url <- generateUrl p c is
-  response <- simpleHTTP $ getRequest url
-  body <- getResponseBody response
-  case (decode . B.pack $ body) of
-    (Just c) -> return $ Right c
-    Nothing -> return $ Left body
-
-generateUrl :: Pusher -> Channel -> [Info] -> IO String
-generateUrl p c is = do
-  let timestamp = authTimestamp
-  withoutSignature <- urlWithoutSignature p c is timestamp
-  (++) (withoutSignature  ++ "&auth_signature=")
-    <$> signedAuthString p c is timestamp
-
-urlWithoutSignature :: Pusher -> Channel -> [Info] -> Timestamp -> IO String
-urlWithoutSignature p@(Pusher _ k _) c is t = ((++) (baseUrl p
-                                                  ++ "/channels/"
-                                                  ++ c
-                                                  ++ "?auth_version=1.0"
-                                                  ++ "&auth_key="
-                                                  ++ k
-                                                  ++ queryParamFromInfo is
-                                                  ++ "&auth_timestamp="))
-                                            <$> t
 queryParamFromInfo :: [Info] -> String
 queryParamFromInfo [] = mzero
 queryParamFromInfo xs = "&info=" ++ (intercalate "," $ map show xs)
-
-signedAuthString :: Pusher -> Channel -> [Info] -> Timestamp -> IO String
-signedAuthString p@(Pusher _ _ appSecret) c is t = do
-  signatureString <- unsignedAuthString p c is t >>= return . B.pack
-  return . showDigest $ hmacSha256 (B.pack appSecret) signatureString
-
-unsignedAuthString :: Pusher -> Channel -> [Info] -> Timestamp -> IO String
-unsignedAuthString (Pusher appId appKey _) c is t =
-  idKeyAndTimestamp appId appKey c
-  <$> t
-  >>= (\u -> return $ u ++ "&auth_version=1.0" ++ queryParamFromInfo is)
 
 idKeyAndTimestamp :: String -> String -> Channel -> String -> String
 idKeyAndTimestamp i k c t = "GET\n/apps/"
