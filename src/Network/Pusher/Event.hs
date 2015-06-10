@@ -15,7 +15,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module Network.Pusher.Event (triggerEvent) where
+module Network.Pusher.Event (triggerEvent, triggerMultiChannelEvent) where
 
 import Network.HTTP
 import Control.Applicative
@@ -25,15 +25,22 @@ import qualified Data.ByteString.Lazy.Char8 as B
 import Data.Hash.MD5
 import Network.Pusher.Base
 
-class RequestBodyable a where
-  requestBody :: a -> Event -> String
-
--- | @triggerEvent pusher channel(s) event@ sends an event to one or more
--- channels for the given 'Pusher' instance. The result is the response body
+-- | @triggerEvent pusher channel event@ sends an event to one
+-- channel for the given 'Pusher' instance. The result is the response body
 -- from the Pusher server.
-triggerEvent :: (RequestBodyable a) => Pusher -> a -> Event -> IO String
+triggerEvent :: Pusher -> Channel -> Event -> IO String
 triggerEvent p c e = do
   let b = requestBody c e
+  url <- generateUrl p b e
+  response <- simpleHTTP $ postRequestWithBody url contentType b
+  getResponseBody response
+
+-- | @triggerMultiChannelEvent pusher channels event@ sends an event to multiple
+-- channels for the given 'Pusher' instance. The result is the response body
+-- from the Pusher server.
+triggerMultiChannelEvent :: Pusher -> Channels -> Event -> IO String
+triggerMultiChannelEvent p cs e = do
+  let b = requestMultiChannelBody cs e
   url <- generateUrl p b e
   response <- simpleHTTP $ postRequestWithBody url contentType b
   getResponseBody response
@@ -55,23 +62,21 @@ urlWithoutSignature p@(Pusher _ k _) b t = ((++) (baseUrl p
                                                   ++ "&auth_timestamp="))
                                             <$> t
 
-instance RequestBodyable Channel where
-  requestBody c e = "{\"name\": \""
-                    ++ (eventName e)
-                    ++ "\", \"channel\": \""
-                    ++ c
-                    ++ "\", \"data\":"
-                    ++ (B.unpack . encode . eventData $ e)
-                    ++ "}"
+requestBody c e = "{\"name\": \""
+                ++ (eventName e)
+                  ++ "\", \"channel\": \""
+                  ++ c
+                  ++ "\", \"data\":"
+                  ++ (B.unpack . encode . eventData $ e)
+                  ++ "}"
 
-instance RequestBodyable Channels where
-  requestBody cs e = "{\"name\": \""
-                     ++ (eventName e)
-                     ++ "\", \"channels\": "
-                     ++ show cs
-                     ++ ", \"data\":"
-                     ++ (B.unpack . encode . eventData $ e)
-                     ++ "}"
+requestMultiChannelBody cs e = "{\"name\": \""
+                             ++ (eventName e)
+                             ++ "\", \"channels\": "
+                             ++ show cs
+                             ++ ", \"data\":"
+                             ++ (B.unpack . encode . eventData $ e)
+                             ++ "}"
 
 signedAuthString :: Pusher -> Timestamp -> Md5Body -> IO String
 signedAuthString p@(Pusher _ _ appSecret) t b = do
