@@ -19,11 +19,57 @@ module Network.Pusher.Event (triggerEvent, triggerMultiChannelEvent) where
 
 import Network.HTTP
 import Control.Applicative
+import Control.Monad
+import Control.Monad.Reader
 import Data.Aeson.Encode (encode)
 import Data.Digest.Pure.SHA
 import qualified Data.ByteString.Lazy.Char8 as B
 import Data.Hash.MD5
 import Network.Pusher.Base
+
+type Environment = (Pusher, String, Event)
+
+triggerEvent' :: Environment -> IO String
+triggerEvent' (p, c, e) = runReaderT event (p, requestBody c e, e)
+
+event :: ReaderT Environment IO String
+event = do
+  (p, b, e) <- ask
+  url <- generateUrl'
+  response <- liftIO . simpleHTTP $ postRequestWithBody url contentType b
+  liftIO $ getResponseBody response
+
+generateUrl' :: ReaderT Environment IO String
+generateUrl' = do
+  (p, b, e) <- ask
+  let md5body = md5s . Str $ b
+  let timestamp = authTimestamp
+  withoutSignature <- urlWithoutSignature' md5body timestamp
+  (++) (withoutSignature  ++ "&auth_signature=")
+    <$> signedAuthString' timestamp md5body
+
+urlWithoutSignature' :: Md5Body -> Timestamp -> ReaderT Environment IO String
+urlWithoutSignature' b t = do
+  (p@(Pusher _ k _), _, _) <- ask
+  liftIO $ ((++) (baseUrl p
+             ++ "/events?body_md5="
+             ++ b
+             ++ "&auth_version=1.0&auth_key="
+             ++ k
+             ++ "&auth_timestamp=")) <$> t
+
+signedAuthString' :: Timestamp -> Md5Body -> ReaderT Environment IO String
+signedAuthString' t b = do
+  (p@(Pusher _ _ appSecret), _, _) <- ask
+  signatureString <- unsignedAuthString' t b >>= return . B.pack
+  return . showDigest $ hmacSha256 (B.pack appSecret) signatureString
+
+unsignedAuthString' :: Timestamp -> Md5Body -> ReaderT Environment IO String
+unsignedAuthString' t b = do
+  (p@(Pusher appId appKey _), _, _) <- ask
+  liftIO $ idKeyAndTimestamp appId appKey
+    <$> t
+    >>= (\u -> return $ u ++ "&auth_version=1.0&body_md5=" ++ b)
 
 -- | @triggerEvent pusher channel event@ sends an event to one
 -- channel for the given 'Pusher' instance. The result is the response body
