@@ -29,27 +29,30 @@ import Network.Pusher.Base
 
 type Environment = (Pusher, String, Event)
 
-triggerEvent' :: Environment -> IO String
-triggerEvent' (p, c, e) = runReaderT event (p, requestBody c e, e)
+triggerEvent :: Environment -> IO String
+triggerEvent (p, c, e) = runReaderT event (p, requestBody c e, e)
+
+triggerMultiChannelEvent :: Environment -> IO String
+triggerMultiChannelEvent (p, cs, e) = runReaderT event (p, requestMultiChannelBody cs e, e)
 
 event :: ReaderT Environment IO String
 event = do
   (p, b, e) <- ask
-  url <- generateUrl'
+  url <- generateUrl
   response <- liftIO . simpleHTTP $ postRequestWithBody url contentType b
   liftIO $ getResponseBody response
 
-generateUrl' :: ReaderT Environment IO String
-generateUrl' = do
+generateUrl :: ReaderT Environment IO String
+generateUrl = do
   (p, b, e) <- ask
   let md5body = md5s . Str $ b
   let timestamp = authTimestamp
-  withoutSignature <- urlWithoutSignature' md5body timestamp
+  withoutSignature <- urlWithoutSignature md5body timestamp
   (++) (withoutSignature  ++ "&auth_signature=")
-    <$> signedAuthString' timestamp md5body
+    <$> signedAuthString timestamp md5body
 
-urlWithoutSignature' :: Md5Body -> Timestamp -> ReaderT Environment IO String
-urlWithoutSignature' b t = do
+urlWithoutSignature :: Md5Body -> Timestamp -> ReaderT Environment IO String
+urlWithoutSignature b t = do
   (p@(Pusher _ k _), _, _) <- ask
   liftIO $ ((++) (baseUrl p
              ++ "/events?body_md5="
@@ -58,14 +61,14 @@ urlWithoutSignature' b t = do
              ++ k
              ++ "&auth_timestamp=")) <$> t
 
-signedAuthString' :: Timestamp -> Md5Body -> ReaderT Environment IO String
-signedAuthString' t b = do
+signedAuthString :: Timestamp -> Md5Body -> ReaderT Environment IO String
+signedAuthString t b = do
   (p@(Pusher _ _ appSecret), _, _) <- ask
-  signatureString <- unsignedAuthString' t b >>= return . B.pack
+  signatureString <- unsignedAuthString t b >>= return . B.pack
   return . showDigest $ hmacSha256 (B.pack appSecret) signatureString
 
-unsignedAuthString' :: Timestamp -> Md5Body -> ReaderT Environment IO String
-unsignedAuthString' t b = do
+unsignedAuthString :: Timestamp -> Md5Body -> ReaderT Environment IO String
+unsignedAuthString t b = do
   (p@(Pusher appId appKey _), _, _) <- ask
   liftIO $ idKeyAndTimestamp appId appKey
     <$> t
@@ -74,39 +77,10 @@ unsignedAuthString' t b = do
 -- | @triggerEvent pusher channel event@ sends an event to one
 -- channel for the given 'Pusher' instance. The result is the response body
 -- from the Pusher server.
-triggerEvent :: Pusher -> Channel -> Event -> IO String
-triggerEvent p c e = do
-  let b = requestBody c e
-  url <- generateUrl p b e
-  response <- simpleHTTP $ postRequestWithBody url contentType b
-  getResponseBody response
 
 -- | @triggerMultiChannelEvent pusher channels event@ sends an event to multiple
 -- channels for the given 'Pusher' instance. The result is the response body
 -- from the Pusher server.
-triggerMultiChannelEvent :: Pusher -> Channels -> Event -> IO String
-triggerMultiChannelEvent p cs e = do
-  let b = requestMultiChannelBody cs e
-  url <- generateUrl p b e
-  response <- simpleHTTP $ postRequestWithBody url contentType b
-  getResponseBody response
-
-generateUrl :: Pusher -> String -> Event -> IO String
-generateUrl p b e = do
-  let md5body = md5s . Str $ b
-  let timestamp = authTimestamp
-  withoutSignature <- urlWithoutSignature p md5body timestamp
-  (++) (withoutSignature  ++ "&auth_signature=")
-    <$> signedAuthString p timestamp md5body
-
-urlWithoutSignature :: Pusher -> Md5Body -> Timestamp -> IO String
-urlWithoutSignature p@(Pusher _ k _) b t = ((++) (baseUrl p
-                                                  ++ "/events?body_md5="
-                                                  ++ b
-                                                  ++ "&auth_version=1.0&auth_key="
-                                                  ++ k
-                                                  ++ "&auth_timestamp="))
-                                            <$> t
 
 requestBody c e = "{\"name\": \""
                 ++ (eventName e)
@@ -123,17 +97,6 @@ requestMultiChannelBody cs e = "{\"name\": \""
                              ++ ", \"data\":"
                              ++ (B.unpack . encode . eventData $ e)
                              ++ "}"
-
-signedAuthString :: Pusher -> Timestamp -> Md5Body -> IO String
-signedAuthString p@(Pusher _ _ appSecret) t b = do
-  signatureString <- unsignedAuthString p t b >>= return . B.pack
-  return . showDigest $ hmacSha256 (B.pack appSecret) signatureString
-
-unsignedAuthString :: Pusher -> Timestamp -> Md5Body -> IO String
-unsignedAuthString (Pusher appId appKey _) t b =
-  idKeyAndTimestamp appId appKey
-  <$> t
-  >>= (\u -> return $ u ++ "&auth_version=1.0&body_md5=" ++ b)
 
 -- Helper for unsignedAuthString
 idKeyAndTimestamp :: String -> String -> String -> String
