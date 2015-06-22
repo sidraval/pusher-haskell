@@ -23,10 +23,10 @@ should see an alert popup on screen.
 > let channel = "test_channel"
 > let event = Event "my_event" "{\"message\":\"hello world\"}"
 
-> triggerEvent pusher channel event
+> triggerEvent (pusher, channel, event)
 "{}"
 
-> getChannelInfo pusher channel []
+> getChannelInfo (pusher, channel, [])
 Right (ChannelInfo {occupied = True, userCount = Nothing, subscriptionCount = Nothing})
 ```
 
@@ -36,7 +36,7 @@ You can also trigger events across multiple channels:
 > let channels = ["first_channel", "second_channel"]
 > ...
 
-> triggerEvent pusher channels event
+> triggerMultiChannelEvent (pusher, channels, event)
 "{}"
 ```
 

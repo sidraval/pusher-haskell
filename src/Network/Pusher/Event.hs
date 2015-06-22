@@ -15,7 +15,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module Network.Pusher.Event (triggerEvent, triggerMultiChannelEvent) where
+module Network.Pusher.Event (triggerEvent, triggerMultiChannelEvent, Environment) where
 
 import Network.HTTP
 import Control.Applicative
@@ -29,9 +29,15 @@ import Network.Pusher.Base
 
 type Environment = (Pusher, String, Event)
 
+-- | @triggerEvent (pusher, channel, event)@ sends an event to one
+-- channel for the given 'Pusher' instance. The result is the response body
+-- from the Pusher server.
 triggerEvent :: Environment -> IO String
 triggerEvent (p, c, e) = runReaderT event (p, requestBody c e, e)
 
+-- | @triggerMultiChannelEvent (pusher, channels, event)@ sends an event to multiple
+-- channels for the given 'Pusher' instance. The result is the response body
+-- from the Pusher server.
 triggerMultiChannelEvent :: Environment -> IO String
 triggerMultiChannelEvent (p, cs, e) = runReaderT event (p, requestMultiChannelBody cs e, e)
 
@@ -73,14 +79,6 @@ unsignedAuthString t b = do
   liftIO $ idKeyAndTimestamp appId appKey
     <$> t
     >>= (\u -> return $ u ++ "&auth_version=1.0&body_md5=" ++ b)
-
--- | @triggerEvent pusher channel event@ sends an event to one
--- channel for the given 'Pusher' instance. The result is the response body
--- from the Pusher server.
-
--- | @triggerMultiChannelEvent pusher channels event@ sends an event to multiple
--- channels for the given 'Pusher' instance. The result is the response body
--- from the Pusher server.
 
 requestBody c e = "{\"name\": \""
                 ++ (eventName e)

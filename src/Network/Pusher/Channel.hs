@@ -31,7 +31,7 @@ import Network.Pusher.Base
 
 type Environment = (Pusher, Channel, [Info])
 
--- | @getChannelInfo pusher channel info@ requests information about a
+-- | @getChannelInfo (pusher, channel, info)@ requests information about a
 -- particular channel for the given 'Pusher' instance. The result is either an
 -- error message returned by the Pusher server, or a 'ChannelInfo' data
 -- structure.
