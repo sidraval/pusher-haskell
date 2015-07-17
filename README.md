@@ -40,6 +40,11 @@ You can also trigger events across multiple channels:
 "{}"
 ```
 
+## Documentation
+
+Documentation for the individual modules is available on
+[hackage][hackage-pusher-haskell].
+
 License
 -------
 
@@ -47,3 +52,4 @@ pusher-haskell is Copyright (c) 2015 Sid Raval. It is free software, and may be
 redistributed under the terms specified in the [LICENSE] file.
 
 [LICENSE]: /LICENSE
+[hackage-pusher-haskell]: http://hackage.haskell.org/package/pusher-haskell

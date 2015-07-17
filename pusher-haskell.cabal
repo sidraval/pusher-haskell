@@ -6,7 +6,7 @@ homepage:            http://www.github.com/sidraval/pusher-haskell
 license:             MIT
 license-file:        LICENSE
 author:              Sid Raval
-maintainer:          sid@thoughtbot.com
+maintainer:          sidsraval@gmail.com
 category:            Web
 build-type:          Simple
 cabal-version:       >=1.10

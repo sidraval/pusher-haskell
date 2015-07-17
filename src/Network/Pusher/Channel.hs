@@ -36,7 +36,7 @@ type Environment = (Pusher, Channel, [Info])
 -- error message returned by the Pusher server, or a 'ChannelInfo' data
 -- structure.
 
-getChannelInfo :: Environment -> IO (Either String ChannelInfo)
+getChannelInfo :: (Pusher, Channel, [Info]) -> IO (Either String ChannelInfo)
 getChannelInfo = runReaderT channelInfo
 
 channelInfo :: ReaderT Environment IO (Either String ChannelInfo)
