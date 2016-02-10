@@ -21,7 +21,7 @@ library
     Network.Pusher.Event,
     Network.Pusher.Channel
   build-depends:
-    base >=4.7 && <4.8,
+    base >=4.7 && <4.9,
     aeson >= 0.8.0.2,
     HTTP >= 4000.2.19,
     SHA  >= 1.6.4.1,
@@ -37,6 +37,6 @@ test-suite spec
   hs-source-dirs: test
   main-is: Spec.hs
   build-depends:
-    base >=4.7 && <4.8,
+    base >=4.7 && <4.9,
     hspec >= 2.1.4,
     pusher-haskell
