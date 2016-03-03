@@ -38,7 +38,7 @@ triggerEvent (p, c, e) = runReaderT event (p, requestBody c e, e)
 -- | @triggerMultiChannelEvent (pusher, channels, event)@ sends an event to multiple
 -- channels for the given 'Pusher' instance. The result is the response body
 -- from the Pusher server.
-triggerMultiChannelEvent :: (Pusher, String, Event) -> IO String
+triggerMultiChannelEvent :: (Pusher, [Channel], Event) -> IO String
 triggerMultiChannelEvent (p, cs, e) = runReaderT event (p, requestMultiChannelBody cs e, e)
 
 event :: ReaderT Environment IO String
