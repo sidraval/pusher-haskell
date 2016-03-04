@@ -16,7 +16,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module Network.Pusher.Channel (getChannelInfo) where
+module Network.Pusher.Channel (getChannelInfo, getMultiChannelInfo) where
 
 import Network.HTTP
 import Control.Applicative
@@ -29,67 +29,86 @@ import Data.Hash.MD5
 import Data.List
 import Network.Pusher.Base
 
-type Environment = (Pusher, Channel, [Info])
+type Environment a = (Pusher, a, [Info], Prefix)
+
+class ChannelURL a where
+  urlify :: a -> String
+
+instance ChannelURL ChannelName where
+  urlify a = "/channels/" ++ a
+
+instance ChannelURL ChannelNames where
+  urlify _ = "/channels"
 
 -- | @getChannelInfo (pusher, channel, info)@ requests information about a
 -- particular channel for the given 'Pusher' instance. The result is either an
 -- error message returned by the Pusher server, or a 'ChannelInfo' data
 -- structure.
 
-getChannelInfo :: (Pusher, Channel, [Info]) -> IO (Either String ChannelInfo)
-getChannelInfo = runReaderT channelInfo
+getChannelInfo :: (Pusher, ChannelName, [Info]) -> IO (Either String ChannelInfo)
+getChannelInfo (p, c, i) = runReaderT channelInfo (p, c, i, Nothing)
 
-channelInfo :: ReaderT Environment IO (Either String ChannelInfo)
+-- | @getMultiChannelInfo (pusher, info, prefix)@ requests information about all
+-- channels for the given 'Pusher' instance. The result is either an
+-- error message returned by the Pusher server, or a 'ChannelList' data
+-- structure.
+
+getMultiChannelInfo :: (Pusher, [Info], Prefix) -> IO (Either String ChannelList)
+getMultiChannelInfo (p, i, f) = runReaderT channelInfo (p, [] :: [String], i, f)
+
+channelInfo :: (ChannelURL a, FromJSON b) => ReaderT (Environment a) IO (Either String b)
 channelInfo = do
-  (p, c, is) <- ask
   response <- liftIO . simpleHTTP . getRequest =<< generateUrl
   body <- liftIO $ getResponseBody response
   case (decode . B.pack $ body) of
     (Just c) -> return $ Right c
     Nothing -> return $ Left body
 
-generateUrl :: ReaderT Environment IO String
+generateUrl :: (ChannelURL a) => ReaderT (Environment a) IO String
 generateUrl = do
   let timestamp = authTimestamp
-  (p, c, is) <- ask
+  (p, c, is, f) <- ask
   withoutSignature <- urlWithoutSignature timestamp
   (++) (withoutSignature ++ "&auth_signature=")
     <$> signedAuthString timestamp
 
-urlWithoutSignature :: Timestamp -> ReaderT Environment IO String
+urlWithoutSignature :: (ChannelURL a) => Timestamp -> ReaderT (Environment a) IO String
 urlWithoutSignature t = do
-  (p@(Pusher _ k _), c, is) <- ask
+  (p@(Pusher _ k _), c, is, f) <- ask
   liftIO $ ((++) (baseUrl p
-      ++ "/channels/"
-      ++ c
+      ++ urlify c
       ++ "?auth_version=1.0"
       ++ "&auth_key="
       ++  k
       ++ queryParamFromInfo is
+      ++ queryParamForPrefix f
       ++ "&auth_timestamp=")) <$> t
 
-signedAuthString :: Timestamp -> ReaderT Environment IO String
+signedAuthString :: (ChannelURL a) => Timestamp -> ReaderT (Environment a) IO String
 signedAuthString t = do
-  (p@(Pusher _ _ appSecret), c, is) <- ask
+  (p@(Pusher _ _ appSecret), c, is, f) <- ask
   signatureString <- unsignedAuthString t >>= return . B.pack
   return . showDigest $ hmacSha256 (B.pack appSecret) signatureString
 
-unsignedAuthString :: Timestamp -> ReaderT Environment IO String
+unsignedAuthString :: (ChannelURL a) => Timestamp -> ReaderT (Environment a) IO String
 unsignedAuthString t = do
-  (p@(Pusher appId appKey _), c, is) <- ask
+  (p@(Pusher appId appKey _), c, is, f) <- ask
   liftIO $ idKeyAndTimestamp appId appKey c
     <$> t
-    >>= (\u -> return $ u ++ "&auth_version=1.0" ++ queryParamFromInfo is)
+    >>= (\u -> return $ u ++ "&auth_version=1.0" ++ queryParamFromInfo is ++ queryParamForPrefix f)
 
 queryParamFromInfo :: [Info] -> String
 queryParamFromInfo [] = mzero
 queryParamFromInfo xs = "&info=" ++ (intercalate "," $ map show xs)
 
-idKeyAndTimestamp :: String -> String -> Channel -> String -> String
+queryParamForPrefix :: Maybe String -> String
+queryParamForPrefix Nothing = ""
+queryParamForPrefix (Just p) = "&filter_by_prefix=" ++ p
+
+idKeyAndTimestamp :: (ChannelURL a) => String -> String -> a -> String -> String
 idKeyAndTimestamp i k c t = "GET\n/apps/"
                             ++ i
-                            ++ "/channels/"
-                            ++ c
+                            ++ urlify c
                             ++ "\nauth_key="
                             ++ k
                             ++ "&auth_timestamp="

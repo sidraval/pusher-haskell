@@ -29,16 +29,16 @@ import Network.Pusher.Base
 
 type Environment = (Pusher, String, Event)
 
--- | @triggerEvent (pusher, channel, event)@ sends an event to one
+-- | @triggerEvent (pusher, channelName, event)@ sends an event to one
 -- channel for the given 'Pusher' instance. The result is the response body
 -- from the Pusher server.
-triggerEvent :: (Pusher, Channel, Event) -> IO String
+triggerEvent :: (Pusher, ChannelName, Event) -> IO String
 triggerEvent (p, c, e) = runReaderT event (p, requestBody c e, e)
 
--- | @triggerMultiChannelEvent (pusher, channels, event)@ sends an event to multiple
+-- | @triggerMultiChannelEvent (pusher, channelNames, event)@ sends an event to multiple
 -- channels for the given 'Pusher' instance. The result is the response body
 -- from the Pusher server.
-triggerMultiChannelEvent :: (Pusher, [Channel], Event) -> IO String
+triggerMultiChannelEvent :: (Pusher, ChannelNames, Event) -> IO String
 triggerMultiChannelEvent (p, cs, e) = runReaderT event (p, requestMultiChannelBody cs e, e)
 
 event :: ReaderT Environment IO String

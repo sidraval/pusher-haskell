@@ -4,7 +4,7 @@ A [Pusher](http://www.pusher.com) server client written in Haskell.
 Currently, the package allows:
 
 * Triggering events on single or multiple channels
-* Fetching basic information about a given channel
+* Fetching basic information about single or multiple channels
 
 Up next:
 
@@ -38,6 +38,14 @@ You can also trigger events across multiple channels:
 
 > triggerMultiChannelEvent (pusher, channels, event)
 "{}"
+```
+
+And fetch information about all channels:
+```haskell
+> ...
+
+> getMultiChannelInfo (pusher, [], Nothing)
+Right (ChannelList [Channel {name = "test_channel", cUserCount = Nothing}])
 ```
 
 ## Documentation
