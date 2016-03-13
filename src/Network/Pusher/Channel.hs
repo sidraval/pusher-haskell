@@ -60,7 +60,7 @@ channelInfo :: (ChannelURL a, FromJSON b) => ReaderT (Environment a) IO (Either 
 channelInfo = do
   response <- liftIO . simpleHTTP . getRequest =<< generateUrl
   body <- liftIO $ getResponseBody response
-  case (decode . B.pack $ body) of
+  case decode . B.pack $ body of
     (Just c) -> return $ Right c
     Nothing -> return $ Left body
 
@@ -75,19 +75,19 @@ generateUrl = do
 urlWithoutSignature :: (ChannelURL a) => Timestamp -> ReaderT (Environment a) IO String
 urlWithoutSignature t = do
   (p@(Pusher _ k _), c, is, f) <- ask
-  liftIO $ ((++) (baseUrl p
+  liftIO $ (++) (baseUrl p
       ++ urlify c
       ++ "?auth_version=1.0"
       ++ "&auth_key="
       ++  k
       ++ queryParamFromInfo is
       ++ queryParamForPrefix f
-      ++ "&auth_timestamp=")) <$> t
+      ++ "&auth_timestamp=") <$> t
 
 signedAuthString :: (ChannelURL a) => Timestamp -> ReaderT (Environment a) IO String
 signedAuthString t = do
   (p@(Pusher _ _ appSecret), c, is, f) <- ask
-  signatureString <- unsignedAuthString t >>= return . B.pack
+  signatureString <- fmap B.pack (unsignedAuthString t)
   return . showDigest $ hmacSha256 (B.pack appSecret) signatureString
 
 unsignedAuthString :: (ChannelURL a) => Timestamp -> ReaderT (Environment a) IO String
@@ -99,7 +99,7 @@ unsignedAuthString t = do
 
 queryParamFromInfo :: [Info] -> String
 queryParamFromInfo [] = mzero
-queryParamFromInfo xs = "&info=" ++ (intercalate "," $ map show xs)
+queryParamFromInfo xs = "&info=" ++ intercalate "," (map show xs)
 
 queryParamForPrefix :: Maybe String -> String
 queryParamForPrefix Nothing = ""

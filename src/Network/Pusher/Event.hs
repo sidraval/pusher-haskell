@@ -60,17 +60,17 @@ generateUrl = do
 urlWithoutSignature :: Md5Body -> Timestamp -> ReaderT Environment IO String
 urlWithoutSignature b t = do
   (p@(Pusher _ k _), _, _) <- ask
-  liftIO $ ((++) (baseUrl p
+  liftIO $ (++) (baseUrl p
              ++ "/events?body_md5="
              ++ b
              ++ "&auth_version=1.0&auth_key="
              ++ k
-             ++ "&auth_timestamp=")) <$> t
+             ++ "&auth_timestamp=") <$> t
 
 signedAuthString :: Timestamp -> Md5Body -> ReaderT Environment IO String
 signedAuthString t b = do
   (p@(Pusher _ _ appSecret), _, _) <- ask
-  signatureString <- unsignedAuthString t b >>= return . B.pack
+  signatureString <- fmap B.pack (unsignedAuthString t b)
   return . showDigest $ hmacSha256 (B.pack appSecret) signatureString
 
 unsignedAuthString :: Timestamp -> Md5Body -> ReaderT Environment IO String
@@ -81,7 +81,7 @@ unsignedAuthString t b = do
     >>= (\u -> return $ u ++ "&auth_version=1.0&body_md5=" ++ b)
 
 requestBody c e = "{\"name\": \""
-                ++ (eventName e)
+                ++ eventName e
                   ++ "\", \"channel\": \""
                   ++ c
                   ++ "\", \"data\":"
@@ -89,7 +89,7 @@ requestBody c e = "{\"name\": \""
                   ++ "}"
 
 requestMultiChannelBody cs e = "{\"name\": \""
-                             ++ (eventName e)
+                             ++ eventName e
                              ++ "\", \"channels\": "
                              ++ show cs
                              ++ ", \"data\":"

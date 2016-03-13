@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module Network.Pusher 
+module Network.Pusher
     ( module Network.Pusher.Base
     , module Network.Pusher.Event
     , module Network.Pusher.Channel

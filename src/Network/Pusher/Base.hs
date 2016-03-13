@@ -57,7 +57,7 @@ type Timestamp = IO String
 type Md5Body = String
 
 authTimestamp :: Timestamp
-authTimestamp = show <$> round <$> getPOSIXTime
+authTimestamp = show . round <$> getPOSIXTime
 
 baseUrl :: Pusher -> String
 baseUrl (Pusher appId _ _) = "http://api.pusherapp.com/apps/" ++ appId
